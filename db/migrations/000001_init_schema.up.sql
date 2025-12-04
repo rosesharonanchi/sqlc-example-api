@@ -1,12 +1,16 @@
 
+CREATE TABLE "user" (
+  "id" SERIAL PRIMARY KEY,
+  "user_name" VARCHAR (100) UNIQUE NOT NULL,
+  "password_hash" TEXT NOT NULL,
+  "created_at" TIMESTAMP NOT NULL DEFAULT NOW()
+); 
 
 
-
-CREATE TABLE "message" (
-  "id" VARCHAR(36) PRIMARY KEY DEFAULT gen_random_uuid()::varchar(36),
-  "thread" VARCHAR(36) NOT NULL,
-  "sender" VARCHAR(100) NOT NULL,
+CREATE TABLE "post" (
+  "id" SERIAL PRIMARY KEY,
+  "user_id" INT NOT NULL REFERENCES "user"("id") ON DELETE CASCADE, 
+  "title" VARCHAR(255) NOT NULL,
   "content" TEXT NOT NULL,
-  "created_at" TIMESTAMP DEFAULT now()
+  "created_at" TIMESTAMP NOT NULL DEFAULT NOW()
 );
-
