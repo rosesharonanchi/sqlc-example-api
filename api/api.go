@@ -9,22 +9,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// Request structs for our content body for "post"
-
-type CreatePostRequest struct {
-	UserID  int32  `json:"user_id" binding:"required"`
-	Title   string `json:"title" binding:"required"`
-	Content string `json:"content" binding:"required"`
-}
-
-type DeletePostRequest struct {
-	UserID int32 `json:"user_id" binding:"required"`
-}
-
-type UpdatePostContentRequest struct {
-	UserID  int32  `json:"user_id" binding:"required"`
-	Content string `json:"content" binding:"required"`
-}
 
 // Request structs for our content body for "user"
 
@@ -55,35 +39,30 @@ func (h *APIHandler) WireHttpHandler() http.Handler {
 	}))
 
 	// User Routes
-	r.POST("/register", h.RegisterUser)
-	r.POST("/login", h.LoginUser)
-	r.GET("/users", h.ListAllUsers)
-	r.GET("/user/:id", h.GetUserByID)
+	r.POST("/register", h.handleRegisterUser)
+	r.POST("/login", h.handleLoginUser)
+	r.GET("/users", h.handleListAllUsers)
+	r.GET("/user/:id", h.handleGetUserByID)
 
 	// Post Routes
-	r.POST("/posts", h.CreatePost)
-	r.GET("/posts", h.ListAllPosts)
-	r.GET("/posts/:id", h.GetPostByID)
-	r.DELETE("/posts/:id", h.DeletePost)
-	r.PUT("/posts/:id", h.UpdatePost)
+	r.POST("/posts", h.handleCreatePost)
+	r.GET("/posts", h.handleListAllPosts)
+	r.GET("/posts/:id", h.handleGetPostByID)
+	r.DELETE("/posts/:id", h.handleDeletePost)
+	r.PUT("/posts/:id", h.handleUpdatePost)
 
 	return r
 }
 
-func (h *APIHandler) CreatePost(c *gin.Context) {
-	var req CreatePostRequest
+func (h *APIHandler) handleCreatePost(c *gin.Context) {
+	var req repo.CreatePostParams
 	if err := c.ShouldBindBodyWithJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid post input (requires user_id, title, content): " + err.Error()})
 		return
 	}
 
-	params := repo.CreatePostParams{
-		UserID:  req.UserID,
-		Title:   req.Title,
-		Content: req.Content,
-	}
 
-	post, err := h.querier.CreatePost(c, params)
+	post, err := h.querier.CreatePost(c, req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create post: " + err.Error()})
 		return
@@ -92,7 +71,7 @@ func (h *APIHandler) CreatePost(c *gin.Context) {
 	c.JSON(http.StatusCreated, post)
 }
 
-func (h *APIHandler) ListAllPosts(c *gin.Context) {
+func (h *APIHandler) handleListAllPosts(c *gin.Context) {
 	posts, err := h.querier.ListAllPosts(c)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve posts: " + err.Error()})
@@ -101,7 +80,7 @@ func (h *APIHandler) ListAllPosts(c *gin.Context) {
 	c.JSON(http.StatusOK, posts)
 }
 
-func (h *APIHandler) GetPostByID(c *gin.Context) {
+func (h *APIHandler) handleGetPostByID(c *gin.Context) {
 	postIDStr := c.Param("id")
 	postID, err := strconv.Atoi(postIDStr)
 	if err != nil {
@@ -122,7 +101,7 @@ func (h *APIHandler) GetPostByID(c *gin.Context) {
 	c.JSON(http.StatusOK, post)
 }
 
-func (h *APIHandler) DeletePost(c *gin.Context) {
+func (h *APIHandler) handleDeletePost(c *gin.Context) {
 	postIDStr := c.Param("id")
 	postID, err := strconv.Atoi(postIDStr)
 	if err != nil {
@@ -130,7 +109,7 @@ func (h *APIHandler) DeletePost(c *gin.Context) {
 		return
 	}
 
-	var req DeletePostRequest
+	var req repo.DeletePostParams
 	if err := c.ShouldBindBodyWithJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "User ID is required for deletion (must be a number)"})
 		return
@@ -149,7 +128,7 @@ func (h *APIHandler) DeletePost(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Post deleted successfully"})
 }
 
-func (h *APIHandler) UpdatePost(c *gin.Context) {
+func (h *APIHandler) handleUpdatePost(c *gin.Context) {
 	postIDStr := c.Param("id")
 	postID, err := strconv.Atoi(postIDStr)
 	if err != nil {
@@ -157,7 +136,7 @@ func (h *APIHandler) UpdatePost(c *gin.Context) {
 		return
 	}
 
-	var req UpdatePostContentRequest
+	var req repo.UpdatePostContentParams
 	if err := c.ShouldBindBodyWithJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "User ID and new content are required."})
 		return
@@ -179,23 +158,25 @@ func (h *APIHandler) UpdatePost(c *gin.Context) {
 
 // User Handler Implementations
 
-func (h *APIHandler) RegisterUser(c *gin.Context) {
-	var req RegisterRequest
+func (h *APIHandler) handleRegisterUser(c *gin.Context) {
+	var req repo.CreateUserParams
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input: " + err.Error()})
 		return
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.PasswordHash), bcrypt.DefaultCost)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
 		return
 	}
 
+	
 	params := repo.CreateUserParams{
-		UserName:     req.Username,
+		UserName:     req.UserName,
 		PasswordHash: string(hashedPassword),
 	}
+	
 
 	user, err := h.querier.CreateUser(c, params)
 	if err != nil {
@@ -206,14 +187,14 @@ func (h *APIHandler) RegisterUser(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"id": user.ID, "username": user.UserName, "message": "Worker registered successfully."})
 }
 
-func (h *APIHandler) LoginUser(c *gin.Context) {
-	var req RegisterRequest
+func (h *APIHandler) handleLoginUser(c *gin.Context) {
+	var req repo.CreateUserParams
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 		return
 	}
 
-	user, err := h.querier.GetUserByUsername(c, req.Username)
+	user, err := h.querier.GetUserByUsername(c, req.UserName)
 	if err != nil {
 		if err.Error() == "no rows in result set" {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password" + err.Error()})
@@ -223,7 +204,7 @@ func (h *APIHandler) LoginUser(c *gin.Context) {
 		return
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password))
+	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.PasswordHash))
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
 		return
@@ -232,7 +213,7 @@ func (h *APIHandler) LoginUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"id": user.ID, "username": user.UserName, "message": "Login successful."})
 }
 
-func (h *APIHandler) GetUserByID(c *gin.Context) {
+func (h *APIHandler) handleGetUserByID(c *gin.Context) {
 	userIDStr := c.Param("id")
 	userID, err := strconv.Atoi(userIDStr)
 	if err != nil {
@@ -253,7 +234,7 @@ func (h *APIHandler) GetUserByID(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
-func (h *APIHandler) ListAllUsers(c *gin.Context) {
+func (h *APIHandler) handleListAllUsers(c *gin.Context) {
 	users, err := h.querier.ListUsers(c)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve users: " + err.Error()})

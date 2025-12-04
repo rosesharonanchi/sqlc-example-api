@@ -1,8 +1,8 @@
-# IkniteConnect
+# IkniteConnect app
 
 This repository contains the starter code for **IkniteConnect**, an API built using **Go**, the **sqlc** tool for safe database queries, and the **Gin web framework** for handling web requests.
 
-IkniteConnect demonstrates a foundational backend for a social media application, focusing on secure user management and basic content creation. It serves as a core part of the Iknite Space training on Relational Databases.
+IkniteConnect demonstrates a foundational backend for a social media application specifically for workers at Iknite, focusing on secure user management and basic content creation. It serves as a core part of the Iknite Space training on Relational Databases.
 
 ## Application Features (What It Does)
 
