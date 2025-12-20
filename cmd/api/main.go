@@ -25,6 +25,7 @@ type DBConfig struct {
 	DBPort      uint16 `conf:"env:DB_PORT,required"`
 	DBName      string `conf:"env:DB_Name,required"`
 	TLSDisabled bool   `conf:"env:DB_TLS_DISABLED"`
+	
 }
 
 // Config holds the application configuration. This struct is populated from the .env in the current directory.
@@ -32,6 +33,7 @@ type Config struct {
 	ListenPort     uint16 `conf:"env:LISTEN_PORT,required"`
 	MigrationsPath string `conf:"env:MIGRATIONS_PATH,required"`
 	DB             DBConfig
+	JWTSecret   string `conf:"env:JWT_SECRET"`
 }
 
 func main() {
@@ -78,7 +80,7 @@ func run() error {
 	querier := repo.New(db)
 
 	// We create a new http handler using the database querier.
-	handler := api.NewAPIHandler(querier).WireHttpHandler()
+	handler := api.NewAPIHandler(querier,config.JWTSecret ).WireHttpHandler()
 
 	// And finally we start the HTTP server on the configured port.
 	err = http.ListenAndServe(fmt.Sprintf(":%d", config.ListenPort), handler)

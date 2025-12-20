@@ -10,15 +10,17 @@ import (
 
 type Post struct {
 	ID        int32            `json:"id"`
-	UserID    int32            `json:"user_id"`
 	Title     string           `json:"title"`
 	Content   string           `json:"content"`
+	UserID    int32            `json:"user_id"`
 	CreatedAt pgtype.Timestamp `json:"created_at"`
+	UpdatedAt pgtype.Timestamp `json:"updated_at"`
 }
 
 type User struct {
-	ID           int32            `json:"id"`
-	UserName     string           `json:"user_name"`
-	PasswordHash string           `json:"password_hash"`
-	CreatedAt    pgtype.Timestamp `json:"created_at"`
+	ID             int32            `json:"id"`
+	Username       string           `json:"username"`
+	Email          string           `json:"email"`
+	HashedPassword string           `json:"hashed_password"`
+	CreatedAt      pgtype.Timestamp `json:"created_at"`
 }

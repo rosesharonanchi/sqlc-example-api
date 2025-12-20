@@ -1,16 +1,21 @@
+CREATE TABLE users(
+    id SERIAL PRIMARY KEY,
+    username VARCHAR UNIQUE NOT NULL,
+    email VARCHAR UNIQUE NOT NULL,
+    hashed_password VARCHAR NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT now()
+);
 
-CREATE TABLE "user" (
-  "id" SERIAL PRIMARY KEY,
-  "user_name" VARCHAR (100) UNIQUE NOT NULL,
-  "password_hash" TEXT NOT NULL,
-  "created_at" TIMESTAMP NOT NULL DEFAULT NOW()
-); 
-
-
-CREATE TABLE "post" (
-  "id" SERIAL PRIMARY KEY,
-  "user_id" INT NOT NULL REFERENCES "user"("id") ON DELETE CASCADE, 
-  "title" VARCHAR(255) NOT NULL,
-  "content" TEXT NOT NULL,
-  "created_at" TIMESTAMP NOT NULL DEFAULT NOW()
+CREATE TABLE posts (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR NOT NULL,
+    content TEXT NOT NULL,
+    user_id INT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT now(),
+    updated_at TIMESTAMP NOT NULL DEFAULT now(),
+    
+    CONSTRAINT fk_user
+      FOREIGN KEY(user_id) 
+	  REFERENCES users(id)
+	  ON DELETE CASCADE
 );

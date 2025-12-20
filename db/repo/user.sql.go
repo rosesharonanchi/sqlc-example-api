@@ -7,96 +7,83 @@ package repo
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO "user" ("user_name", "password_hash")
-VALUES ($1, $2)
-RETURNING "id", "user_name", "created_at"
+INSERT INTO users(username, email , hashed_password)
+VALUES ($1, $2, $3)
+RETURNING id, username, email, hashed_password, created_at
 `
 
 type CreateUserParams struct {
-	UserName     string `json:"user_name"`
-	PasswordHash string `json:"password_hash"`
+	Username       string `json:"username"`
+	Email          string `json:"email"`
+	HashedPassword string `json:"hashed_password"`
 }
 
-type CreateUserRow struct {
-	ID        int32            `json:"id"`
-	UserName  string           `json:"user_name"`
-	CreatedAt pgtype.Timestamp `json:"created_at"`
-}
-
-func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error) {
-	row := q.db.QueryRow(ctx, createUser, arg.UserName, arg.PasswordHash)
-	var i CreateUserRow
-	err := row.Scan(&i.ID, &i.UserName, &i.CreatedAt)
-	return i, err
-}
-
-const getUserByID = `-- name: GetUserByID :one
-SELECT "id", "user_name", "created_at" FROM "user"
-WHERE "id" = $1 LIMIT 1
-`
-
-type GetUserByIDRow struct {
-	ID        int32            `json:"id"`
-	UserName  string           `json:"user_name"`
-	CreatedAt pgtype.Timestamp `json:"created_at"`
-}
-
-func (q *Queries) GetUserByID(ctx context.Context, id int32) (GetUserByIDRow, error) {
-	row := q.db.QueryRow(ctx, getUserByID, id)
-	var i GetUserByIDRow
-	err := row.Scan(&i.ID, &i.UserName, &i.CreatedAt)
-	return i, err
-}
-
-const getUserByUsername = `-- name: GetUserByUsername :one
-SELECT id, user_name, password_hash, created_at FROM "user"
-WHERE "user_name" = $1 LIMIT 1
-`
-
-func (q *Queries) GetUserByUsername(ctx context.Context, userName string) (User, error) {
-	row := q.db.QueryRow(ctx, getUserByUsername, userName)
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
+	row := q.db.QueryRow(ctx, createUser, arg.Username, arg.Email, arg.HashedPassword)
 	var i User
 	err := row.Scan(
 		&i.ID,
-		&i.UserName,
-		&i.PasswordHash,
+		&i.Username,
+		&i.Email,
+		&i.HashedPassword,
 		&i.CreatedAt,
 	)
 	return i, err
 }
 
-const listUsers = `-- name: ListUsers :many
-SELECT "id", "user_name", "created_at" FROM "user"
-ORDER BY "created_at" DESC
+const deleteUser = `-- name: DeleteUser :exec
+DELETE FROM users
+WHERE id = $1
 `
 
-type ListUsersRow struct {
-	ID        int32            `json:"id"`
-	UserName  string           `json:"user_name"`
-	CreatedAt pgtype.Timestamp `json:"created_at"`
+func (q *Queries) DeleteUser(ctx context.Context, id int32) error {
+	_, err := q.db.Exec(ctx, deleteUser, id)
+	return err
 }
 
-func (q *Queries) ListUsers(ctx context.Context) ([]ListUsersRow, error) {
-	rows, err := q.db.Query(ctx, listUsers)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []ListUsersRow{}
-	for rows.Next() {
-		var i ListUsersRow
-		if err := rows.Scan(&i.ID, &i.UserName, &i.CreatedAt); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+const getUseryByEmail = `-- name: GetUseryByEmail :one
+SELECT id, username, email, hashed_password, created_at FROM users
+WHERE email = $1
+`
+
+func (q *Queries) GetUseryByEmail(ctx context.Context, email string) (User, error) {
+	row := q.db.QueryRow(ctx, getUseryByEmail, email)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.HashedPassword,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const updateUser = `-- name: UpdateUser :one
+UPDATE users
+SET username = $2 , hashed_password = $3
+WHERE id = $1
+RETURNING id, username, email, hashed_password, created_at
+`
+
+type UpdateUserParams struct {
+	ID             int32  `json:"id"`
+	Username       string `json:"username"`
+	HashedPassword string `json:"hashed_password"`
+}
+
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error) {
+	row := q.db.QueryRow(ctx, updateUser, arg.ID, arg.Username, arg.HashedPassword)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.HashedPassword,
+		&i.CreatedAt,
+	)
+	return i, err
 }

@@ -10,70 +10,78 @@ import (
 )
 
 const createPost = `-- name: CreatePost :one
-INSERT INTO "post" ("user_id", "title", "content")
-VALUES ($1, $2, $3)
-RETURNING id, user_id, title, content, created_at
+INSERT INTO posts (
+  title,
+  content,
+  user_id
+) VALUES (
+  $1, $2, $3
+) RETURNING id, title, content, user_id, created_at, updated_at
 `
 
 type CreatePostParams struct {
-	UserID  int32  `json:"user_id"`
 	Title   string `json:"title"`
 	Content string `json:"content"`
+	UserID  int32  `json:"user_id"`
 }
 
 func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) (Post, error) {
-	row := q.db.QueryRow(ctx, createPost, arg.UserID, arg.Title, arg.Content)
+	row := q.db.QueryRow(ctx, createPost, arg.Title, arg.Content, arg.UserID)
 	var i Post
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
 		&i.Title,
 		&i.Content,
+		&i.UserID,
 		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
 
 const deletePost = `-- name: DeletePost :exec
-DELETE FROM "post"
-WHERE "id" = $1 AND "user_id" = $2
+DELETE FROM posts
+WHERE id = $1
 `
 
-type DeletePostParams struct {
-	ID     int32 `json:"id"`
-	UserID int32 `json:"user_id"`
-}
-
-func (q *Queries) DeletePost(ctx context.Context, arg DeletePostParams) error {
-	_, err := q.db.Exec(ctx, deletePost, arg.ID, arg.UserID)
+func (q *Queries) DeletePost(ctx context.Context, id int32) error {
+	_, err := q.db.Exec(ctx, deletePost, id)
 	return err
 }
 
-const getPostByID = `-- name: GetPostByID :one
-SELECT id, user_id, title, content, created_at FROM "post"
-WHERE "id" = $1 LIMIT 1
+const getPost = `-- name: GetPost :one
+SELECT id, title, content, user_id, created_at, updated_at FROM posts
+WHERE id = $1 LIMIT 1
 `
 
-func (q *Queries) GetPostByID(ctx context.Context, id int32) (Post, error) {
-	row := q.db.QueryRow(ctx, getPostByID, id)
+func (q *Queries) GetPost(ctx context.Context, id int32) (Post, error) {
+	row := q.db.QueryRow(ctx, getPost, id)
 	var i Post
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
 		&i.Title,
 		&i.Content,
+		&i.UserID,
 		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
 
-const listAllPosts = `-- name: ListAllPosts :many
-SELECT id, user_id, title, content, created_at FROM "post"
-ORDER BY "created_at" DESC
+const listPosts = `-- name: ListPosts :many
+SELECT id, title, content, user_id, created_at, updated_at FROM posts
+ORDER BY created_at DESC
+LIMIT $1
+OFFSET $2
 `
 
-func (q *Queries) ListAllPosts(ctx context.Context) ([]Post, error) {
-	rows, err := q.db.Query(ctx, listAllPosts)
+type ListPostsParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+func (q *Queries) ListPosts(ctx context.Context, arg ListPostsParams) ([]Post, error) {
+	rows, err := q.db.Query(ctx, listPosts, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -83,10 +91,11 @@ func (q *Queries) ListAllPosts(ctx context.Context) ([]Post, error) {
 		var i Post
 		if err := rows.Scan(
 			&i.ID,
-			&i.UserID,
 			&i.Title,
 			&i.Content,
+			&i.UserID,
 			&i.CreatedAt,
+			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -98,28 +107,29 @@ func (q *Queries) ListAllPosts(ctx context.Context) ([]Post, error) {
 	return items, nil
 }
 
-const updatePostContent = `-- name: UpdatePostContent :one
-UPDATE "post"
-SET "content" = $3
-WHERE "id" = $1 AND "user_id" = $2
-RETURNING id, user_id, title, content, created_at
+const updatePost = `-- name: UpdatePost :one
+UPDATE posts
+SET title = $2, content = $3, updated_at = now()
+WHERE id = $1
+RETURNING id, title, content, user_id, created_at, updated_at
 `
 
-type UpdatePostContentParams struct {
+type UpdatePostParams struct {
 	ID      int32  `json:"id"`
-	UserID  int32  `json:"user_id"`
+	Title   string `json:"title"`
 	Content string `json:"content"`
 }
 
-func (q *Queries) UpdatePostContent(ctx context.Context, arg UpdatePostContentParams) (Post, error) {
-	row := q.db.QueryRow(ctx, updatePostContent, arg.ID, arg.UserID, arg.Content)
+func (q *Queries) UpdatePost(ctx context.Context, arg UpdatePostParams) (Post, error) {
+	row := q.db.QueryRow(ctx, updatePost, arg.ID, arg.Title, arg.Content)
 	var i Post
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
 		&i.Title,
 		&i.Content,
+		&i.UserID,
 		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
