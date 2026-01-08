@@ -25,6 +25,7 @@ func Migrate(dbURL string, migrationsPath string) error {
 	if err != nil {
 		return err
 	}
+	
 	defer m.Close()
 
 	// Apply migrations
@@ -51,6 +52,7 @@ func MigrateDown(dbURL string, migrationsPath string) error {
 	if err != nil {
 		return err
 	}
+	
 	defer m.Close()
 
 	// Apply migrations
