@@ -1,22 +1,277 @@
-
 version: "2"
 
-run:
-  timeout: 5m
-  tests: false
-
 linters:
-  default: none
+  # Default set of linters.
+  # The value can be:
+  # - `standard`: https://golangci-lint.run/docs/linters/#enabled-by-default
+  # - `all`: enables all linters by default.
+  # - `none`: disables all linters by default.
+  # - `fast`: enables only linters considered as "fast"
+  # Default: standard
+  default: all
+  # Enable specific linter.
   enable:
-    - govet
+    - arangolint
+    - asasalint
+    - asciicheck
+    - bidichk
+    - bodyclose
+    - canonicalheader
+    - containedctx
+    - contextcheck
+    - copyloopvar
+    - cyclop
+    - decorder
+    - depguard
+    - dogsled
+    - dupl
+    - dupword
+    - durationcheck
+    - embeddedstructfieldcheck
+    - err113
     - errcheck
-    - staticcheck
+    - errchkjson
+    - errname
+    - errorlint
+    - exhaustive
+    - exhaustruct
+    - exptostd
+    - fatcontext
+    - forbidigo
+    - forcetypeassert
+    - funcorder
+    - funlen
+    - ginkgolinter
+    - gocheckcompilerdirectives
+    - gochecknoglobals
+    - gochecknoinits
+    - gochecksumtype
+    - gocognit
+    - goconst
+    - gocritic
+    - gocyclo
+    - godoclint
+    - godot
+    - godox
+    - goheader
+    - gomoddirectives
+    - gomodguard
+    - goprintffuncname
     - gosec
+    - gosmopolitan
+    - govet
+    - grouper
+    - iface
+    - importas
+    - inamedparam
+    - ineffassign
+    - interfacebloat
+    - intrange
+    - iotamixing
+    - ireturn
+    - lll
+    - loggercheck
+    - maintidx
+    - makezero
+    - mirror
+    - misspell
+    - mnd
+    - modernize
+    - musttag
+    - nakedret
+    - nestif
+    - nilerr
+    - nilnesserr
+    - nilnil
+    - nlreturn
+    - noctx
+    - noinlineerr
+    - nolintlint
+    - nonamedreturns
+    - nosprintfhostport
+    - paralleltest
+    - perfsprint
+    - prealloc
+    - predeclared
+    - promlinter
+    - protogetter
+    - reassign
+    - recvcheck
+    - revive
+    - rowserrcheck
+    - sloglint
+    - spancheck
+    - sqlclosecheck
+    - staticcheck
+    - tagalign
+    - tagliatelle
+    - testableexamples
+    - testifylint
+    - testpackage
+    - thelper
+    - tparallel
+    - unconvert
+    - unparam
+    - unqueryvet
     - unused
+    - usestdlibvars
+    - usetesting
+    - varnamelen
+    - wastedassign
+    - whitespace
+    - wrapcheck
+    - wsl
+    - wsl_v5
+    - zerologlint
+  # Disable specific linters.
+  disable:
+    - arangolint
+    - asasalint
+    - asciicheck
+    - bidichk
+    - bodyclose
+    - canonicalheader
+    - containedctx
+    - contextcheck
+    - copyloopvar
+    - cyclop
+    - decorder
+    - depguard
+    - dogsled
+    - dupl
+    - dupword
+    - durationcheck
+    - embeddedstructfieldcheck
+    - err113
+    - errcheck
+    - errchkjson
+    - errname
+    - errorlint
+    - exhaustive
+    - exhaustruct
+    - exptostd
+    - fatcontext
+    - forbidigo
+    - forcetypeassert
+    - funcorder
+    - funlen
+    - ginkgolinter
+    - gocheckcompilerdirectives
+    - gochecknoglobals
+    - gochecknoinits
+    - gochecksumtype
+    - gocognit
+    - goconst
+    - gocritic
+    - gocyclo
+    - godoclint
+    - godot
+    - godox
+    - goheader
+    - gomoddirectives
+    - gomodguard
+    - goprintffuncname
+    - gosec
+    - gosmopolitan
+    - govet
+    - grouper
+    - iface
+    - importas
+    - inamedparam
+    - ineffassign
+    - interfacebloat
+    - intrange
+    - iotamixing
+    - ireturn
+    - lll
+    - loggercheck
+    - maintidx
+    - makezero
+    - mirror
+    - misspell
+    - mnd
+    - modernize
+    - musttag
+    - nakedret
+    - nestif
+    - nilerr
+    - nilnesserr
+    - nilnil
+    - nlreturn
+    - noctx
+    - noinlineerr
+    - nolintlint
+    - nonamedreturns
+    - nosprintfhostport
+    - paralleltest
+    - perfsprint
+    - prealloc
+    - predeclared
+    - promlinter
+    - protogetter
+    - reassign
+    - recvcheck
+    - revive
+    - rowserrcheck
+    - sloglint
+    - spancheck
+    - sqlclosecheck
+    - staticcheck
+    - tagalign
+    - tagliatelle
+    - testableexamples
+    - testifylint
+    - testpackage
+    - thelper
+    - tparallel
+    - unconvert
+    - unparam
+    - unqueryvet
+    - unused
+    - usestdlibvars
+    - usetesting
+    - varnamelen
+    - wastedassign
+    - whitespace
+    - wrapcheck
+    - wsl
+    - wsl_v5
+    - zerologlint
 
-issues:
+  # Defines a set of rules to ignore issues.
   exclusions:
+    # Mode of the generated files analysis.
+    generated: lax
+    # Log a warning if an exclusion rule is unused.
+    warn-unused: true
+    # Predefined exclusion rules.
+    presets:
+      - comments
+      - std-error-handling
+      - common-false-positives
+      - legacy
+    # Excluding configuration per-path, per-linter, per-text and per-source.
     rules:
-      - path: db/repo/.*
+      - path: _test\.go
         linters:
+          - gocyclo
           - errcheck
+          - dupl
+          - gosec
+      - path-except: _test\.go
+        linters:
+          - forbidigo
+      - path: internal/hmac/
+        text: "weak cryptographic primitive"
+        linters:
+          - gosec
+      - linters:
+          - staticcheck
+        text: "SA9003:"
+      - linters:
+          - lll
+        source: "^//go:generate "
+    # Which file paths to exclude.
+    paths:
+      - ".*\\.my\\.go$"
+      - lib/bad.go
