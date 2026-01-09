@@ -34,7 +34,7 @@ jobs:
 
   dependency-review:
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' 
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -49,4 +49,8 @@ jobs:
         uses: golang/govulncheck-action@v1
         with:
            go-version-input: 'stable'
+<<<<<<< HEAD
            go-package: ./...
+=======
+           go-package: ./...
+>>>>>>> fd4aa867de7c990ba88e14ab679d17682bdcdfd3
