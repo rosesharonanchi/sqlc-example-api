@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-
+    "time"
 	"github.com/ardanlabs/conf/v3"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
@@ -83,10 +83,22 @@ func run() error {
 	handler := api.NewAPIHandler(querier,config.JWTSecret ).WireHttpHandler()
 
 	// And finally we start the HTTP server on the configured port.
-	err = http.ListenAndServe(fmt.Sprintf(":%d", config.ListenPort), handler)
-	if err != nil {
-		fmt.Println("Error starting server:", err)
-	}
+	// Define the server with timeouts (Satisfies gosec G114)
+server := &http.Server{
+    Addr:              fmt.Sprintf(":%d", config.ListenPort),
+    Handler:           handler,
+    ReadHeaderTimeout: 5 * time.Second,  // Time allowed to read request headers
+    ReadTimeout:       15 * time.Second, // Time allowed to read the entire request
+    WriteTimeout:      15 * time.Second, // Time allowed to write the response
+    IdleTimeout:       60 * time.Second, // Time allowed between requests
+}
+
+// we Start the HTTP server using the custom config
+fmt.Printf("Starting server on port %d...\n", config.ListenPort)
+err = server.ListenAndServe()
+if err != nil && err != http.ErrServerClosed {
+    fmt.Println("Error starting server:", err)
+}
 
 	return nil
 }
