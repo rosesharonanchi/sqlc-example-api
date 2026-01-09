@@ -32,11 +32,15 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: stable
+          go-version: '1.22'
+          cache: true
+      - name: Install dependencies
+        run: go mod download
       - name: golang-lint
         uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.8
+          version: latest
+          working-directory: .
   dependency-review:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
