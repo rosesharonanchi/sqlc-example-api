@@ -4,7 +4,7 @@ This repository contains the starter code for **IkniteConnect**, an API built us
 
 IkniteConnect demonstrates a foundational backend for a social media application specifically for workers at Iknite, focusing on secure user management and basic content creation. It serves as a core part of the Iknite Space training on Relational Databases.
 
-## Application Features (What It Does)
+## Application Features
 
 The API supports the following core functions:
 
