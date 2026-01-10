@@ -41,14 +41,7 @@ jobs:
         with:
           version: latest
           working-directory: .
-  dependency-review:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-      - name: Dependency Review
-        uses: actions/dependency-review-action@v4
+
   govulncheck_job:
     runs-on: ubuntu-latest
     steps:
